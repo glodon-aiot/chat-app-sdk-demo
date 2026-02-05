@@ -128,6 +128,59 @@ function sdkAssetsDevPlugin(): Plugin {
   };
 }
 
+// 创建插件来忽略 SDK 中的动态导入警告
+// 这个警告是 Vite 的 import-analysis 插件产生的，因为 SDK 使用了 Webpack 风格的动态导入
+function ignoreSdkDynamicImportWarningsPlugin(): Plugin {
+  let originalWarn: typeof console.warn;
+
+  return {
+    name: 'ignore-sdk-dynamic-import-warnings',
+    enforce: 'pre',
+    // 在 configureServer 中拦截警告
+    configureServer(server) {
+      // 拦截 Vite 的警告信息（通过 logger）
+      if (server.config.logger) {
+        const originalLoggerWarn = server.config.logger.warn;
+        server.config.logger.warn = (msg, options) => {
+          // 过滤掉来自 SDK 的动态导入警告
+          const msgStr = typeof msg === 'string' ? msg : String(msg);
+          if (
+            msgStr.includes('dynamic import cannot be analyzed') &&
+            (msgStr.includes('chat-app-sdk') || msgStr.includes('index.esm.js'))
+          ) {
+            // 忽略这个警告
+            return;
+          }
+          // 其他警告正常输出
+          originalLoggerWarn.call(server.config.logger, msg, options);
+        };
+      }
+
+      // 同时拦截 console.warn（因为某些警告可能直接通过 console 输出）
+      originalWarn = console.warn;
+      console.warn = (...args: any[]) => {
+        const message = args[0]?.toString() || '';
+        // 过滤掉来自 SDK 的动态导入警告
+        if (
+          message.includes('dynamic import cannot be analyzed') &&
+          (message.includes('chat-app-sdk') || message.includes('index.esm.js'))
+        ) {
+          // 忽略这个警告
+          return;
+        }
+        // 其他警告正常输出
+        originalWarn.apply(console, args);
+      };
+    },
+    // 在服务器关闭时恢复原始的 console.warn
+    buildEnd() {
+      if (originalWarn) {
+        console.warn = originalWarn;
+      }
+    },
+  };
+}
+
 // 创建插件来修复 SDK 中的动态导入路径（用于 GitHub Pages）
 // 注意：SDK 已在 build-esm.config.ts 中添加了 publicPath: 'auto'，理论上应该自动处理路径问题
 // 此插件作为后备方案，如果 SDK 修复后验证通过，可以移除此插件
@@ -388,6 +441,7 @@ export default defineConfig({
   plugins: [
     react(),
     sdkAssetsDevPlugin(), // 开发环境资源处理插件
+    ignoreSdkDynamicImportWarningsPlugin(), // 忽略 SDK 动态导入警告
     // 自动分离 vendor chunk（node_modules 依赖）
     splitVendorChunkPlugin(),
     // 构建时复制 SDK 资源文件到 dist 目录
@@ -443,6 +497,20 @@ export default defineConfig({
     // 配置 chunk 大小警告阈值
     chunkSizeWarningLimit: 1000, // 1MB
     rollupOptions: {
+      // 过滤掉来自 SDK 的动态导入警告
+      onwarn(warning, warn) {
+        // 忽略来自 SDK 的动态导入警告
+        if (
+          warning.message &&
+          warning.message.includes('dynamic import cannot be analyzed') &&
+          (warning.message.includes('chat-app-sdk') ||
+            warning.message.includes('index.esm.js'))
+        ) {
+          return;
+        }
+        // 其他警告正常输出
+        warn(warning);
+      },
       output: {
         // 手动配置代码分割策略
         manualChunks: id => {

@@ -120,8 +120,14 @@ export const DemoPage = ({ onInitialized }: DemoPageProps) => {
 
     try {
       // 动态导入 SDK
-      const { WebChatClient } = await import('@glodon-aiot/chat-app-sdk');
+      await import('@glodon-aiot/chat-app-sdk');
       console.log('✅ SDK loaded successfully');
+
+      // 从全局变量获取 WebChatClient（因为 ESM 导出有问题）
+      const WebChatClient = (window as any).GlodonAIoT?.WebChatClient;
+      if (!WebChatClient) {
+        throw new Error('WebChatClient is not available. Please check if the SDK is loaded correctly.');
+      }
 
       // 构建配置对象
       const config: any = {
