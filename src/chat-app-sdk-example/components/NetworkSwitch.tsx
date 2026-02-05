@@ -29,6 +29,7 @@ class NetworkSwitchClass extends React.Component<
   {
     isOpen: boolean;
     dropdownPosition: { top: number; left: number } | null;
+    currentMode: NetworkSearchMode; // 添加内部 state 来立即反映变化
   }
 > {
   private buttonRef: React.RefObject<HTMLButtonElement>;
@@ -43,15 +44,20 @@ class NetworkSwitchClass extends React.Component<
     this.state = {
       isOpen: false,
       dropdownPosition: null,
+      currentMode: props.mode, // 初始化时使用 prop 的值
     };
     this.buttonRef = React.createRef();
     this.containerRef = React.createRef();
   }
 
   componentDidUpdate(
-    _prevProps: { mode: NetworkSearchMode },
-    prevState: { isOpen: boolean },
+    prevProps: { mode: NetworkSearchMode },
+    prevState: { isOpen: boolean; currentMode: NetworkSearchMode },
   ) {
+    // 当 prop 变化时同步到内部 state
+    if (prevProps.mode !== this.props.mode) {
+      this.setState({ currentMode: this.props.mode });
+    }
     // 计算下拉菜单位置（向上弹出）
     if (this.state.isOpen && !prevState.isOpen && this.buttonRef.current) {
       const rect = this.buttonRef.current.getBoundingClientRect();
@@ -119,8 +125,10 @@ class NetworkSwitchClass extends React.Component<
   };
 
   render() {
-    const { mode, onChange } = this.props;
-    const { isOpen, dropdownPosition } = this.state;
+    const { onChange } = this.props;
+    const { isOpen, dropdownPosition, currentMode } = this.state;
+    // 使用内部 state 来显示当前模式，这样当用户选择新选项时可以立即更新
+    const mode = currentMode;
 
     const options: Array<{ value: NetworkSearchMode; label: string }> = [
       { value: 0, label: '关闭联网搜索' },
@@ -156,8 +164,13 @@ class NetworkSwitchClass extends React.Component<
                   {
                     key: option.value,
                     onClick: () => {
+                      // 立即更新内部 state，使 UI 立即反映变化
+                      this.setState({
+                        currentMode: option.value,
+                        isOpen: false
+                      });
+                      // 然后调用 onChange 更新外部 state
                       onChange(option.value);
-                      this.setState({ isOpen: false });
                     },
                     style: {
                       display: 'flex',
