@@ -105,7 +105,7 @@ export const ConfigurationForm = ({
           type="text"
           value={apiUrl}
           onChange={e => setApiUrl(e.target.value)}
-          placeholder="https://aiot-dev.glodon.com/api/cvforcepd/flow"
+          placeholder="https://copilot.glodon.com/api/cvforce/flow"
           style={{
             width: '100%',
             padding: '12px',
