@@ -1,5 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import type { WebChatClient } from '@glodon-aiot/chat-app-sdk';
+
 import { AutoIcon, EnableIcon, DisableIcon } from './icons/NetworkIcons';
 
 // 联网搜索模式类型
@@ -277,7 +279,7 @@ export const NetworkSwitchWrapper = ({
 }: {
   connectNetworkRef: React.MutableRefObject<number>;
   setConnectNetwork: (value: number) => void;
-  clientRef: React.MutableRefObject<any>; // 使用 any 因为动态导入
+  clientRef: React.MutableRefObject<WebChatClient | null>;
   chatType: 'bot' | 'app';
 }) => {
   // 直接从 ref 读取当前值，不使用 state
