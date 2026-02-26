@@ -23,7 +23,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@glodon-aiot/chat-app-sdk": "^0.0.27",
+    "@glodon-aiot/chat-app-sdk": "^0.0.28",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.12.0"
