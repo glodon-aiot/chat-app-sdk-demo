@@ -127,6 +127,10 @@ export class KnowledgeReferenceList extends HTMLElement {
     const results = data.results || [];
     const totalCount = results.length;
 
+    if (!totalCount) {
+      return;
+    }
+
     this.shadowRoot.innerHTML = `
       <style>
         * {
