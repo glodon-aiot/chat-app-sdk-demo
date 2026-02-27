@@ -370,6 +370,10 @@ export class MergedReferenceList extends HTMLElement {
     const webSearch = data.webSearch || [];
     const totalCount = knowledgeReferences.length + webSearch.length;
 
+    if (!totalCount) {
+      return;
+    }
+
     // 链接图标 SVG（紫色）
     const linkIconSvg = `
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
