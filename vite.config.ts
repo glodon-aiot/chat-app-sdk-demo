@@ -186,13 +186,14 @@ function ignoreSdkDynamicImportWarningsPlugin(): Plugin {
 // 此插件作为后备方案，如果 SDK 修复后验证通过，可以移除此插件
 function fixSdkDynamicImportsPlugin(): Plugin {
   const basePath =
-    process.env.NODE_ENV === 'production' ? '/glodon-aiot-examples/' : '/';
+    process.env.VITE_BASE_PATH || (process.env.NODE_ENV === 'production' ? '/' : '/');
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
 
   return {
     name: 'fix-sdk-dynamic-imports',
     writeBundle(options, bundle) {
       // 只在生产环境处理
-      if (process.env.NODE_ENV !== 'production' || basePath === '/') {
+      if (process.env.NODE_ENV !== 'production' || normalizedBase === '/') {
         return;
       }
 
@@ -243,7 +244,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
         /([a-zA-Z_$][a-zA-Z0-9_$]*\.p)\s*=\s*[a-zA-Z_$][a-zA-Z0-9_$]*\}\)\s*\)\s*\(\s*\)\s*;\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*new URL\(["']\.\/["'],\s*import\.meta\.url\)/;
       if (tePattern.test(content)) {
         content = content.replace(tePattern, (match, varName) => {
-          return `${varName} = "${basePath}assets/"`;
+          return `${varName} = "${normalizedBase}assets/"`;
         });
         modified = true;
       }
@@ -272,7 +273,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
                 new RegExp(
                   `(${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*=\\s*[a-zA-Z_$][a-zA-Z0-9_$]*`,
                 ),
-                `${varName} = "${basePath}assets/"`,
+                `${varName} = "${normalizedBase}assets/"`,
               );
               modified = true;
               break; // 只替换第一个匹配
@@ -285,7 +286,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
       publicPathPatterns.forEach((pattern, index) => {
         if (pattern.test(content)) {
           content = content.replace(pattern, (match, varName) => {
-            return `${varName} = "${basePath}assets/"`;
+            return `${varName} = "${normalizedBase}assets/"`;
           });
           modified = true;
         }
@@ -308,7 +309,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
             'g',
           );
           content = content.replace(specificPPattern, (match, pVar) => {
-            return `${pVar} = "${basePath}assets/"`;
+            return `${pVar} = "${normalizedBase}assets/"`;
           });
           modified = true;
         }
@@ -436,8 +437,10 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
 }
 
 export default defineConfig({
-  // GitHub Pages 部署需要设置 base 路径
-  base: process.env.NODE_ENV === 'production' ? '/glodon-aiot-examples/' : '/',
+  // Base path: use VITE_BASE_PATH in CI (main: /, develop: /test/); default production /
+  base:
+    process.env.VITE_BASE_PATH ??
+    (process.env.NODE_ENV === 'production' ? '/' : '/'),
   plugins: [
     react(),
     sdkAssetsDevPlugin(), // 开发环境资源处理插件
@@ -490,7 +493,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: process.env.VITE_OUT_DIR || 'dist',
     sourcemap: false, // 生产环境禁用 sourcemap 以减小文件大小
     // 启用代码压缩（使用 esbuild，更快）
     minify: 'esbuild',
