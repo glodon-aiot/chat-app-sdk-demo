@@ -29,9 +29,10 @@ function addSdkAssetsMiddleware(middlewares: any) {
     }
 
     // 匹配 SDK 的 JS chunk 文件（如 82.js, 691.js）
-    // 支持带 base 路径的请求（如 /glodon-aiot-examples/assets/82.js）
+    // 支持带 base 路径的请求（如 /chat-app-sdk-demo/assets/82.js 或 /chat-app-sdk-demo/test/assets/82.js）
     // 也支持不带 base 路径的请求（如 /assets/82.js）
     const jsChunkMatch =
+      req.url.match(/\/chat-app-sdk-demo(?:\/test)?\/assets\/(\d+\.js)$/) ||
       req.url.match(/\/glodon-aiot-examples\/assets\/(\d+\.js)$/) ||
       req.url.match(/\/assets\/(\d+\.js)$/);
     if (jsChunkMatch) {
@@ -186,13 +187,15 @@ function ignoreSdkDynamicImportWarningsPlugin(): Plugin {
 // 此插件作为后备方案，如果 SDK 修复后验证通过，可以移除此插件
 function fixSdkDynamicImportsPlugin(): Plugin {
   const basePath =
-    process.env.NODE_ENV === 'production' ? '/glodon-aiot-examples/' : '/';
+    process.env.VITE_BASE_PATH ??
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/');
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
 
   return {
     name: 'fix-sdk-dynamic-imports',
     writeBundle(options, bundle) {
-      // 只在生产环境处理
-      if (process.env.NODE_ENV !== 'production' || basePath === '/') {
+      // 只在生产环境处理；若 base 已是根路径则跳过
+      if (process.env.NODE_ENV !== 'production' || normalizedBase === '/') {
         return;
       }
 
@@ -243,7 +246,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
         /([a-zA-Z_$][a-zA-Z0-9_$]*\.p)\s*=\s*[a-zA-Z_$][a-zA-Z0-9_$]*\}\)\s*\)\s*\(\s*\)\s*;\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*new URL\(["']\.\/["'],\s*import\.meta\.url\)/;
       if (tePattern.test(content)) {
         content = content.replace(tePattern, (match, varName) => {
-          return `${varName} = "${basePath}assets/"`;
+          return `${varName} = "${normalizedBase}assets/"`;
         });
         modified = true;
       }
@@ -272,7 +275,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
                 new RegExp(
                   `(${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*=\\s*[a-zA-Z_$][a-zA-Z0-9_$]*`,
                 ),
-                `${varName} = "${basePath}assets/"`,
+                `${varName} = "${normalizedBase}assets/"`,
               );
               modified = true;
               break; // 只替换第一个匹配
@@ -285,7 +288,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
       publicPathPatterns.forEach((pattern, index) => {
         if (pattern.test(content)) {
           content = content.replace(pattern, (match, varName) => {
-            return `${varName} = "${basePath}assets/"`;
+            return `${varName} = "${normalizedBase}assets/"`;
           });
           modified = true;
         }
@@ -308,7 +311,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
             'g',
           );
           content = content.replace(specificPPattern, (match, pVar) => {
-            return `${pVar} = "${basePath}assets/"`;
+            return `${pVar} = "${normalizedBase}assets/"`;
           });
           modified = true;
         }
@@ -436,8 +439,10 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
 }
 
 export default defineConfig({
-  // GitHub Pages 部署需要设置 base 路径
-  base: process.env.NODE_ENV === 'production' ? '/glodon-aiot-examples/' : '/',
+  // GitHub Pages：使用 VITE_BASE_PATH（CI 设置），默认生产环境为 /chat-app-sdk-demo/
+  base:
+    process.env.VITE_BASE_PATH ??
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/'),
   plugins: [
     react(),
     sdkAssetsDevPlugin(), // 开发环境资源处理插件
