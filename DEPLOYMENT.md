@@ -6,7 +6,7 @@
 
 ### 1. 启用 GitHub Pages
 
-1. 进入你的 GitHub 仓库：https://github.com/Aruna1990/glodon-aiot-examples
+1. 进入你的 GitHub 仓库：https://github.com/glodon-aiot/chat-app-sdk-demo
 2. 点击 **Settings** → **Pages**
 3. 在 **Source** 部分，选择 **GitHub Actions**
 4. 保存设置
@@ -31,18 +31,18 @@ git push origin main
 
 部署成功后，你的网站将在以下地址可用：
 
-**https://aruna1990.github.io/glodon-aiot-examples/**
+**https://glodon-aiot.github.io/chat-app-sdk-demo/**
 
 ## 📝 配置说明
 
 ### Vite 配置
 
-项目已配置 `base: '/glodon-aiot-examples/'`，这是 GitHub Pages 部署所需的路径前缀。
+项目已配置 `base: '/chat-app-sdk-demo/'`，这是 GitHub Pages 项目页部署所需的路径前缀。
 
-如果你的仓库名不同，需要修改 `vite.config.ts` 中的 `base` 配置：
+若仓库名不同，需在构建时设置环境变量或修改 `vite.config.ts` 中的默认 base：
 
 ```typescript
-base: process.env.NODE_ENV === 'production' ? '/your-repo-name/' : '/',
+base: process.env.VITE_BASE_PATH ?? (process.env.NODE_ENV === 'production' ? '/your-repo-name/' : '/'),
 ```
 
 ### GitHub Actions 工作流

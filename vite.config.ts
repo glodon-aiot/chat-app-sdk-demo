@@ -186,13 +186,14 @@ function ignoreSdkDynamicImportWarningsPlugin(): Plugin {
 // 此插件作为后备方案，如果 SDK 修复后验证通过，可以移除此插件
 function fixSdkDynamicImportsPlugin(): Plugin {
   const basePath =
-    process.env.VITE_BASE_PATH || (process.env.NODE_ENV === 'production' ? '/' : '/');
+    process.env.VITE_BASE_PATH ??
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/');
   const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
 
   return {
     name: 'fix-sdk-dynamic-imports',
     writeBundle(options, bundle) {
-      // 只在生产环境处理
+      // 只在生产环境处理；若 base 已是根路径则跳过（避免误改）
       if (process.env.NODE_ENV !== 'production' || normalizedBase === '/') {
         return;
       }
@@ -437,10 +438,10 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
 }
 
 export default defineConfig({
-  // Base path: use VITE_BASE_PATH in CI (main: /, develop: /test/); default production /
+  // Base path: use VITE_BASE_PATH in CI; default production to /chat-app-sdk-demo/ for GitHub Pages
   base:
     process.env.VITE_BASE_PATH ??
-    (process.env.NODE_ENV === 'production' ? '/' : '/'),
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/'),
   plugins: [
     react(),
     sdkAssetsDevPlugin(), // 开发环境资源处理插件
