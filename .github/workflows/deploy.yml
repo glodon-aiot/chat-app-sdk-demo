@@ -57,13 +57,13 @@ jobs:
           key: prod-build
         continue-on-error: true
 
-      # Develop: build test (base /test/, output to dist-test)
+      # Develop: build test (base /chat-app-sdk-demo/test/, output to dist-test)
       - name: Build test
         if: github.ref == 'refs/heads/develop'
         run: npm run build
         env:
           NODE_ENV: production
-          VITE_BASE_PATH: '/test/'
+          VITE_BASE_PATH: '/chat-app-sdk-demo/test/'
           VITE_OUT_DIR: dist-test
 
       # Develop: merge prod (from cache) + test into combined for deployment

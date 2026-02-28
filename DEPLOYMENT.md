@@ -31,7 +31,8 @@ git push origin main
 
 部署成功后，你的网站将在以下地址可用：
 
-**https://glodon-aiot.github.io/chat-app-sdk-demo/**
+- **生产环境（main）**：https://glodon-aiot.github.io/chat-app-sdk-demo/
+- **测试环境（develop）**：https://glodon-aiot.github.io/chat-app-sdk-demo/test/
 
 ## 📝 配置说明
 
@@ -49,8 +50,9 @@ base: process.env.VITE_BASE_PATH ?? (process.env.NODE_ENV === 'production' ? '/y
 
 `.github/workflows/deploy.yml` 文件配置了自动部署流程：
 
-- **触发条件**：推送到 `main` 分支
-- **构建步骤**：安装依赖 → 构建项目 → 上传构建产物
+- **触发条件**：推送到 `main`（生产）或 `develop`（测试）分支
+- **main**：构建生产版本（base `/chat-app-sdk-demo/`）并部署
+- **develop**：在缓存的生产构建基础上，再构建测试版本（base `/chat-app-sdk-demo/test/`），合并后部署
 - **部署步骤**：自动部署到 GitHub Pages
 
 ## 🔧 故障排除
