@@ -48,6 +48,25 @@ jobs:
           path: dist
           key: prod-build
 
+      # Main: 恢复上次 develop 部署的 combined（保留 /test/），与当前 prod 合并后再部署，避免生产部署覆盖测试环境
+      - name: Restore combined from develop (for preserving /test/)
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        with:
+          path: combined-cache
+          key: combined-from-develop
+        continue-on-error: true
+
+      # Main: 合并当前生产构建 + 保留的 test 目录，使部署同时包含 / 和 /test/
+      - name: Merge production with preserved test (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p combined
+          cp -r dist/. combined/
+          if [ -d combined-cache/test ] && [ "$(ls -A combined-cache/test 2>/dev/null)" ]; then
+            cp -r combined-cache/test combined/
+          fi
+
       # Develop: restore prod build from cache
       - name: Restore production build cache
         if: github.ref == 'refs/heads/develop'
@@ -79,6 +98,14 @@ jobs:
           fi
           cp -r dist-test/. combined/test/
 
+      # Develop: 保存 combined 供下次 main 部署时保留 /test/
+      - name: Cache combined (for main to preserve test)
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/cache/save@v4
+        with:
+          path: combined
+          key: combined-from-develop
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:
@@ -88,7 +115,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './combined'
 
       - name: Upload artifact (test + production merged)
         if: github.ref == 'refs/heads/develop'
