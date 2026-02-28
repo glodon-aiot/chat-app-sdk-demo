@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
@@ -48,6 +48,25 @@ jobs:
           path: dist
           key: prod-build
 
+      # Main: 恢复上次 develop 部署的 combined（保留 /test/），与当前 prod 合并后再部署，避免生产部署覆盖测试环境
+      - name: Restore combined from develop (for preserving /test/)
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        with:
+          path: combined-cache
+          key: combined-from-develop
+        continue-on-error: true
+
+      # Main: 合并当前生产构建 + 保留的 test 目录，使部署同时包含 / 和 /test/
+      - name: Merge production with preserved test (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p combined
+          cp -r dist/. combined/
+          if [ -d combined-cache/test ] && [ "$(ls -A combined-cache/test 2>/dev/null)" ]; then
+            cp -r combined-cache/test combined/
+          fi
+
       # Develop: restore prod build from cache
       - name: Restore production build cache
         if: github.ref == 'refs/heads/develop'
@@ -73,8 +92,19 @@ jobs:
           mkdir -p combined/test
           if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
             cp -r dist/* combined/
+          else
+            # 无 prod 缓存时：根目录放重定向页，引导到 /test/
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=./test/"></head><body><p>Redirecting to <a href="./test/">test</a>...</p></body></html>' > combined/index.html
           fi
-          cp -r dist-test/* combined/test/
+          cp -r dist-test/. combined/test/
+
+      # Develop: 保存 combined 供下次 main 部署时保留 /test/
+      - name: Cache combined (for main to preserve test)
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/cache/save@v4
+        with:
+          path: combined
+          key: combined-from-develop
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -85,7 +115,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './combined'
 
       - name: Upload artifact (test + production merged)
         if: github.ref == 'refs/heads/develop'
@@ -94,9 +124,10 @@ jobs:
           path: './combined'
 
   deploy:
+    # 不同环境对应不同访问 URL：main -> 站点根；develop -> 站点根/test/
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'test' }}
+      url: ${{ github.ref == 'refs/heads/main' && steps.deployment.outputs.page_url || format('{0}test/', steps.deployment.outputs.page_url) }}
     runs-on: ubuntu-latest
     needs: build
     steps:

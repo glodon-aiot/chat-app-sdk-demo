@@ -29,9 +29,10 @@ function addSdkAssetsMiddleware(middlewares: any) {
     }
 
     // 匹配 SDK 的 JS chunk 文件（如 82.js, 691.js）
-    // 支持带 base 路径的请求（如 /glodon-aiot-examples/assets/82.js）
+    // 支持带 base 路径的请求（如 /chat-app-sdk-demo/assets/82.js 或 /chat-app-sdk-demo/test/assets/82.js）
     // 也支持不带 base 路径的请求（如 /assets/82.js）
     const jsChunkMatch =
+      req.url.match(/\/chat-app-sdk-demo(?:\/test)?\/assets\/(\d+\.js)$/) ||
       req.url.match(/\/glodon-aiot-examples\/assets\/(\d+\.js)$/) ||
       req.url.match(/\/assets\/(\d+\.js)$/);
     if (jsChunkMatch) {
@@ -193,7 +194,7 @@ function fixSdkDynamicImportsPlugin(): Plugin {
   return {
     name: 'fix-sdk-dynamic-imports',
     writeBundle(options, bundle) {
-      // 只在生产环境处理；若 base 已是根路径则跳过（避免误改）
+      // 只在生产环境处理；若 base 已是根路径则跳过
       if (process.env.NODE_ENV !== 'production' || normalizedBase === '/') {
         return;
       }
@@ -438,7 +439,7 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
 }
 
 export default defineConfig({
-  // Base path: use VITE_BASE_PATH in CI; default production to /chat-app-sdk-demo/ for GitHub Pages
+  // GitHub Pages：使用 VITE_BASE_PATH（CI 设置），默认生产环境为 /chat-app-sdk-demo/
   base:
     process.env.VITE_BASE_PATH ??
     (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/'),
