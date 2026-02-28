@@ -490,7 +490,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: process.env.VITE_OUT_DIR || 'dist',
     sourcemap: false, // 生产环境禁用 sourcemap 以减小文件大小
     // 启用代码压缩（使用 esbuild，更快）
     minify: 'esbuild',
