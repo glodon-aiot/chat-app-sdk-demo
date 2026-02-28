@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -31,25 +32,71 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      # Main: build production (base /chat-app-sdk-demo/ for GitHub Pages)
+      - name: Build production
+        if: github.ref == 'refs/heads/main'
         run: npm run build
         env:
           NODE_ENV: production
+          VITE_BASE_PATH: '/chat-app-sdk-demo/'
+
+      # Main: save prod build to cache for develop to merge later
+      - name: Cache production build
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: dist
+          key: prod-build
+
+      # Develop: restore prod build from cache
+      - name: Restore production build cache
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/cache/restore@v4
+        with:
+          path: dist
+          key: prod-build
+        continue-on-error: true
+
+      # Develop: build test (base /chat-app-sdk-demo/test/, output to dist-test)
+      - name: Build test
+        if: github.ref == 'refs/heads/develop'
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_BASE_PATH: '/chat-app-sdk-demo/test/'
+          VITE_OUT_DIR: dist-test
+
+      # Develop: merge prod (from cache) + test into combined for deployment
+      - name: Merge prod and test builds
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          mkdir -p combined/test
+          if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
+            cp -r dist/* combined/
+          fi
+          cp -r dist-test/* combined/test/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:
-          # 自动启用 GitHub Pages（如果尚未启用）
           enablement: true
 
-      - name: Upload artifact
+      - name: Upload artifact (production)
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
+      - name: Upload artifact (test + production merged)
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './combined'
+
   deploy:
+    # develop 使用 test 环境（你已在 test 中允许 develop）；main 使用 github-pages
     environment:
-      name: github-pages
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'test' }}
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
@@ -57,4 +104,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
