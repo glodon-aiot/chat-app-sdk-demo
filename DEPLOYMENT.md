@@ -6,7 +6,7 @@
 
 ### 1. 启用 GitHub Pages
 
-1. 进入你的 GitHub 仓库：https://github.com/Aruna1990/glodon-aiot-examples
+1. 进入你的 GitHub 仓库：https://github.com/glodon-aiot/chat-app-sdk-demo
 2. 点击 **Settings** → **Pages**
 3. 在 **Source** 部分，选择 **GitHub Actions**
 4. 保存设置
@@ -29,28 +29,26 @@ git push origin main
 
 ### 4. 访问网站
 
-部署成功后，你的网站将在以下地址可用：
+部署成功后，访问地址如下（**develop 测试环境请务必打开 /test/ 地址**）：
 
-**https://aruna1990.github.io/glodon-aiot-examples/**
+- **生产环境（main）**：https://glodon-aiot.github.io/chat-app-sdk-demo/
+- **测试环境（develop）**：https://glodon-aiot.github.io/chat-app-sdk-demo/test/
+
+说明：推送到 `develop` 后，站点根路径 `/` 可能与生产一致或为重定向页，**测试内容仅在 `/test/` 下**。请直接访问上述测试环境地址，避免资源 404。
 
 ## 📝 配置说明
 
 ### Vite 配置
 
-项目已配置 `base: '/glodon-aiot-examples/'`，这是 GitHub Pages 部署所需的路径前缀。
-
-如果你的仓库名不同，需要修改 `vite.config.ts` 中的 `base` 配置：
-
-```typescript
-base: process.env.NODE_ENV === 'production' ? '/your-repo-name/' : '/',
-```
+项目已配置 `base`：生产/测试在 CI 中通过 `VITE_BASE_PATH` 分别设为 `/chat-app-sdk-demo/` 与 `/chat-app-sdk-demo/test/`。
 
 ### GitHub Actions 工作流
 
 `.github/workflows/deploy.yml` 文件配置了自动部署流程：
 
-- **触发条件**：推送到 `main` 分支
-- **构建步骤**：安装依赖 → 构建项目 → 上传构建产物
+- **触发条件**：推送到 `main`（生产）或 `develop`（测试）分支
+- **main**：构建生产版本（base `/chat-app-sdk-demo/`）并部署
+- **develop**：构建测试版本（base `/chat-app-sdk-demo/test/`），与缓存的生产构建合并后部署；**测试环境地址为 …/chat-app-sdk-demo/test/**
 - **部署步骤**：自动部署到 GitHub Pages
 
 ## 🔧 故障排除

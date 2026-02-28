@@ -73,8 +73,11 @@ jobs:
           mkdir -p combined/test
           if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
             cp -r dist/* combined/
+          else
+            # 无 prod 缓存时：根目录放重定向页，引导到 /test/
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=./test/"></head><body><p>Redirecting to <a href="./test/">test</a>...</p></body></html>' > combined/index.html
           fi
-          cp -r dist-test/* combined/test/
+          cp -r dist-test/. combined/test/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
