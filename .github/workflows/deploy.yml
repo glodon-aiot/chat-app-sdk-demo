@@ -97,10 +97,10 @@ jobs:
           path: './combined'
 
   deploy:
-    # develop 使用 test 环境（你已在 test 中允许 develop）；main 使用 github-pages
+    # 不同环境对应不同访问 URL：main -> 站点根；develop -> 站点根/test/
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'test' }}
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ github.ref == 'refs/heads/main' && steps.deployment.outputs.page_url || format('{0}test/', steps.deployment.outputs.page_url) }}
     runs-on: ubuntu-latest
     needs: build
     steps:
