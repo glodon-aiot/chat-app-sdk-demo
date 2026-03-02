@@ -62,7 +62,7 @@ npm run build
 项目已配置自动部署到 GitHub Pages。每次推送到 `main` 分支时，GitHub Actions 会自动构建并部署项目。
 
 **访问地址：**
-- GitHub Pages: https://aruna1990.github.io/glodon-aiot-examples/
+- GitHub Pages: https://glodon-aiot.github.io/chat-app-sdk-demo/live/#/demo
 
 **手动部署步骤：**
 
@@ -111,7 +111,7 @@ This example demonstrates:
 
 ## Learn More
 
-- [Chat App SDK 介绍](https://aruna1990.github.io/glodon-aiot-examples/)
+- [Chat App SDK 介绍](https://glodon-aiot.github.io/chat-app-sdk-demo/live/#/demo)
 - [Web Components Guide](https://developer.mozilla.org/en-US/docs/Web/Web_Components)
 
 ## License
