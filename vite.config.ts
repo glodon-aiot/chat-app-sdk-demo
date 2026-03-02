@@ -438,6 +438,22 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
   return assets;
 }
 
+// 测试环境在页面 title 前加【测试环境】前缀
+function testEnvTitlePlugin(): Plugin {
+  const basePath = process.env.VITE_BASE_PATH ?? '';
+  const isTest = basePath.includes('/test/');
+  return {
+    name: 'test-env-title-plugin',
+    transformIndexHtml(html) {
+      if (!isTest) return html;
+      return html.replace(
+        /<title>([^<]*)<\/title>/,
+        '<title>【测试环境】$1</title>',
+      );
+    },
+  };
+}
+
 export default defineConfig({
   // GitHub Pages：使用 VITE_BASE_PATH（CI 设置），默认生产环境为 /chat-app-sdk-demo/live/
   base:
@@ -445,6 +461,7 @@ export default defineConfig({
     (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/live/' : '/'),
   plugins: [
     react(),
+    testEnvTitlePlugin(), // 测试环境 title 前缀
     sdkAssetsDevPlugin(), // 开发环境资源处理插件
     ignoreSdkDynamicImportWarningsPlugin(), // 忽略 SDK 动态导入警告
     // 自动分离 vendor chunk（node_modules 依赖）
