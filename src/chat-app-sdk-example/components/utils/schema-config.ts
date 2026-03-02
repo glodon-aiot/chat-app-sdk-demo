@@ -1,4 +1,6 @@
 // Schema Version 排序配置类型定义
+import { getStorageEnvSuffix } from './storage-env';
+
 export interface SchemaVersionConfig {
   schemaVersion: string;
   renderIndex: number;
@@ -9,7 +11,7 @@ export interface SortConfig {
   negative: SchemaVersionConfig[]; // renderIndex < 0
 }
 
-const STORAGE_KEY = '数据定义版本_sort_config';
+const STORAGE_KEY = '数据定义版本_sort_config' + getStorageEnvSuffix();
 
 const DEFAULT_CONFIG: SortConfig = {
   positive: [

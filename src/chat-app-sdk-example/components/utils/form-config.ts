@@ -1,5 +1,7 @@
 // 表单配置类型定义和 localStorage 工具函数
 
+import { getStorageEnvSuffix } from './storage-env';
+
 export interface FormConfig {
   token: string;
   chatType: 'bot' | 'app';
@@ -12,7 +14,7 @@ export interface FormConfig {
   logoUrl: string;
 }
 
-const FORM_STORAGE_KEY = 'webcomponent_demo_form_config';
+const FORM_STORAGE_KEY = 'webcomponent_demo_form_config' + getStorageEnvSuffix();
 
 const DEFAULT_FORM_CONFIG: FormConfig = {
   token: '',
