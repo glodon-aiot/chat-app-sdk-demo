@@ -215,7 +215,8 @@ export const ConfigurationForm = ({
           type="text"
           value={apiUrl}
           onChange={e => setApiUrl(e.target.value)}
-          placeholder="https://copilot.glodon.com/api/cvforce/flow"
+          readOnly={currentEnv !== 'private'}
+          placeholder="https://your.host.name/api/cvforce/flow"
           style={{
             width: '100%',
             padding: '12px',
@@ -224,6 +225,9 @@ export const ConfigurationForm = ({
             fontSize: '14px',
             fontFamily: 'monospace',
             boxSizing: 'border-box',
+            ...(currentEnv !== 'private'
+              ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' }
+              : {}),
           }}
         />
       </div>
