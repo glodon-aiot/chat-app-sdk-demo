@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { SchemaVersionSortConfig } from './SchemaVersionSortConfig';
 import type { SortConfig } from './utils/schema-config';
 import { ExternalLink } from './ExternalLink';
@@ -63,6 +64,40 @@ function getTenantCodeFromToken(token: string): string | null {
   }
 }
 
+/** 请求 space list，返回第一个 space 的 id（与 token 对应），失败或无数据返回 null */
+async function fetchFirstSpaceId(
+  apiUrl: string,
+  token: string,
+): Promise<string | null> {
+  const base = apiUrl.trim().replace(/\/$/, '');
+  const url = `${base}/api/playground_api/space/list`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'content-type': 'application/json',
+        authorization: `Bearer ${token.trim()}`,
+      },
+      body: '{}',
+    });
+    const json = (await res.json()) as {
+      data?: {
+        bot_space_list?: Array<{ id?: string }>;
+        recently_used_space_list?: Array<{ id?: string }>;
+      };
+      code?: number;
+    };
+    if (json.code !== 0 || !json.data) return null;
+    const first =
+      json.data.bot_space_list?.[0]?.id ??
+      json.data.recently_used_space_list?.[0]?.id;
+    return first ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface ConfigurationFormProps {
   token: string;
   setToken: (value: string) => void;
@@ -119,6 +154,21 @@ export const ConfigurationForm = ({
   const portalSegment = getPortalSegmentFromApiUrl(apiUrl);
   const tenantCode = token.trim() ? getTenantCodeFromToken(token.trim()) : null;
   const showPortalLinks = Boolean(tenantCode && apiUrl.trim());
+
+  const [spaceId, setSpaceId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!apiUrl.trim() || !token.trim()) {
+      setSpaceId(null);
+      return;
+    }
+    let cancelled = false;
+    fetchFirstSpaceId(apiUrl, token).then(id => {
+      if (!cancelled) setSpaceId(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl, token]);
 
   const handleEnvChange = (env: 'dev' | 'test' | 'prod' | 'private') => {
     const option = ENV_OPTIONS.find(o => o.value === env);
@@ -412,9 +462,9 @@ export const ConfigurationForm = ({
                   </span>
                 </Tooltip>
               </label>
-              {appId.trim() && showPortalLinks && (
+              {appId.trim() && showPortalLinks && spaceId && (
                 <ExternalLink
-                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/1758636595/project-ide/${appId.trim()}`}
+                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/${spaceId}/project-ide/${appId.trim()}`}
                   title="在系统中打开 App"
                 />
               )}
@@ -489,9 +539,9 @@ export const ConfigurationForm = ({
                   </span>
                 </Tooltip>
               </label>
-              {appId.trim() && workflowId.trim() && showPortalLinks && (
+              {appId.trim() && workflowId.trim() && showPortalLinks && spaceId && (
                 <ExternalLink
-                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/1758636595/project-ide/${appId.trim()}/workflow/${workflowId.trim()}`}
+                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/${spaceId}/project-ide/${appId.trim()}/workflow/${workflowId.trim()}`}
                   title="在系统中打开 Workflow"
                 />
               )}

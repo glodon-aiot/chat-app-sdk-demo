@@ -83,6 +83,12 @@ export const DemoPage = ({ onInitialized }: DemoPageProps) => {
     logoUrl,
   ]);
 
+  const canInitialize =
+    token.trim() !== '' &&
+    (chatType === 'bot'
+      ? botId.trim() !== ''
+      : appId.trim() !== '' && workflowId.trim() !== '');
+
   const initializeClient = async () => {
     // 检查浏览器支持
     if (!window.customElements) {
@@ -326,25 +332,39 @@ export const DemoPage = ({ onInitialized }: DemoPageProps) => {
               <p style={{ margin: 0 }}>
                 请在左侧配置SDK参数并点击"初始化聊天客户端"按钮
               </p>
+              {!canInitialize && (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    color: '#ff9800',
+                  }}
+                >
+                  请填写必填字段
+                  {chatType === 'bot' ? '（Token、Bot ID）' : '（Token、App ID、Workflow ID）'}
+                </p>
+              )}
               <button
                 onClick={initializeClient}
-                disabled={isLoadingSdk}
+                disabled={isLoadingSdk || !canInitialize}
                 style={{
                   padding: '14px 28px',
-                  background: isLoadingSdk
-                    ? '#ccc'
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background:
+                    isLoadingSdk || !canInitialize
+                      ? '#ccc'
+                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '16px',
                   fontWeight: 'bold',
-                  cursor: isLoadingSdk ? 'not-allowed' : 'pointer',
+                  cursor:
+                    isLoadingSdk || !canInitialize ? 'not-allowed' : 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
-                  opacity: isLoadingSdk ? 0.7 : 1,
+                  opacity: isLoadingSdk || !canInitialize ? 0.7 : 1,
                 }}
                 onMouseOver={e => {
-                  if (!isLoadingSdk) {
+                  if (!isLoadingSdk && canInitialize) {
                     e.currentTarget.style.transform = 'translateY(-2px)';
                     e.currentTarget.style.boxShadow =
                       '0 4px 12px rgba(0,0,0,0.2)';
