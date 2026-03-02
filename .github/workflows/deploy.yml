@@ -41,12 +41,13 @@ jobs:
           VITE_BASE_PATH: '/chat-app-sdk-demo/live/'
 
       # Main: save prod build to cache for develop to merge later
+      # 缓存 key 带版本号：base 路径变更时需 bump，避免 develop 误用旧构建导致 /live 资源 404
       - name: Cache production build
         if: github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4
         with:
           path: dist
-          key: prod-build
+          key: prod-build-v2
 
       # Main: 恢复上次 develop 部署的 combined（保留 /test/），与当前 prod 合并后再部署，避免生产部署覆盖测试环境
       - name: Restore combined from develop (for preserving /test/)
@@ -68,13 +69,13 @@ jobs:
           fi
           echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>chat-app-sdk-demo</title></head><body><p><a href="./live/">生产环境 (live)</a></p><p><a href="./test/">测试环境 (test)</a></p></body></html>' > combined/index.html
 
-      # Develop: restore prod build from cache
+      # Develop: restore prod build from cache（key 与 main 的 save 一致，bump 版本可作废旧缓存）
       - name: Restore production build cache
         if: github.ref == 'refs/heads/develop'
         uses: actions/cache/restore@v4
         with:
           path: dist
-          key: prod-build
+          key: prod-build-v2
         continue-on-error: true
 
       # Develop: build test (base /chat-app-sdk-demo/test/, output to dist-test)
