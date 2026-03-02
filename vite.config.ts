@@ -188,7 +188,7 @@ function ignoreSdkDynamicImportWarningsPlugin(): Plugin {
 function fixSdkDynamicImportsPlugin(): Plugin {
   const basePath =
     process.env.VITE_BASE_PATH ??
-    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/');
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/live/' : '/');
   const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
 
   return {
@@ -439,10 +439,10 @@ function getSdkAssets(): Array<{ src: string; dest: string }> {
 }
 
 export default defineConfig({
-  // GitHub Pages：使用 VITE_BASE_PATH（CI 设置），默认生产环境为 /chat-app-sdk-demo/
+  // GitHub Pages：使用 VITE_BASE_PATH（CI 设置），默认生产环境为 /chat-app-sdk-demo/live/
   base:
     process.env.VITE_BASE_PATH ??
-    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/' : '/'),
+    (process.env.NODE_ENV === 'production' ? '/chat-app-sdk-demo/live/' : '/'),
   plugins: [
     react(),
     sdkAssetsDevPlugin(), // 开发环境资源处理插件

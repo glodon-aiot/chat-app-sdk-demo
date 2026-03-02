@@ -29,26 +29,27 @@ git push origin main
 
 ### 4. 访问网站
 
-部署成功后，访问地址如下（**develop 测试环境请务必打开 /test/ 地址**）：
+部署成功后，访问地址如下：
 
-- **生产环境（main）**：https://glodon-aiot.github.io/chat-app-sdk-demo/
+- **生产环境（main）**：https://glodon-aiot.github.io/chat-app-sdk-demo/live/
 - **测试环境（develop）**：https://glodon-aiot.github.io/chat-app-sdk-demo/test/
+- **站点根路径**：https://glodon-aiot.github.io/chat-app-sdk-demo/ 会显示引导页，可点击进入上述两个环境。
 
-说明：推送到 `develop` 后，站点根路径 `/` 可能与生产一致或为重定向页，**测试内容仅在 `/test/` 下**。请直接访问上述测试环境地址，避免资源 404。
+两个环境独立部署、互不影响：推送到 `main` 仅更新 `/live`，推送到 `develop` 仅更新 `/test`。
 
 ## 📝 配置说明
 
 ### Vite 配置
 
-项目已配置 `base`：生产/测试在 CI 中通过 `VITE_BASE_PATH` 分别设为 `/chat-app-sdk-demo/` 与 `/chat-app-sdk-demo/test/`。
+项目已配置 `base`：生产/测试在 CI 中通过 `VITE_BASE_PATH` 分别设为 `/chat-app-sdk-demo/live/` 与 `/chat-app-sdk-demo/test/`。
 
 ### GitHub Actions 工作流
 
 `.github/workflows/deploy.yml` 文件配置了自动部署流程：
 
 - **触发条件**：推送到 `main`（生产）或 `develop`（测试）分支
-- **main**：构建生产版本（base `/chat-app-sdk-demo/`）并部署
-- **develop**：构建测试版本（base `/chat-app-sdk-demo/test/`），与缓存的生产构建合并后部署；**测试环境地址为 …/chat-app-sdk-demo/test/**
+- **main**：构建生产版本（base `/chat-app-sdk-demo/live/`），仅更新站点下的 `/live` 目录，并保留已有 `/test` 内容
+- **develop**：构建测试版本（base `/chat-app-sdk-demo/test/`），仅更新站点下的 `/test` 目录，并保留已有 `/live` 内容；两环境互不影响
 - **部署步骤**：自动部署到 GitHub Pages
 
 ## 🔧 故障排除

@@ -32,13 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Main: build production (base /chat-app-sdk-demo/ for GitHub Pages)
+      # Main: build production (base /chat-app-sdk-demo/live/ for GitHub Pages)
       - name: Build production
         if: github.ref == 'refs/heads/main'
         run: npm run build
         env:
           NODE_ENV: production
-          VITE_BASE_PATH: '/chat-app-sdk-demo/'
+          VITE_BASE_PATH: '/chat-app-sdk-demo/live/'
 
       # Main: save prod build to cache for develop to merge later
       - name: Cache production build
@@ -57,15 +57,16 @@ jobs:
           key: combined-from-develop
         continue-on-error: true
 
-      # Main: 合并当前生产构建 + 保留的 test 目录，使部署同时包含 / 和 /test/
+      # Main: 合并当前生产构建到 /live + 保留的 /test 目录，根目录放引导页
       - name: Merge production with preserved test (main)
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p combined
-          cp -r dist/. combined/
+          mkdir -p combined/live combined/test
+          cp -r dist/. combined/live/
           if [ -d combined-cache/test ] && [ "$(ls -A combined-cache/test 2>/dev/null)" ]; then
             cp -r combined-cache/test combined/
           fi
+          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>chat-app-sdk-demo</title></head><body><p><a href="./live/">生产环境 (live)</a></p><p><a href="./test/">测试环境 (test)</a></p></body></html>' > combined/index.html
 
       # Develop: restore prod build from cache
       - name: Restore production build cache
@@ -85,17 +86,15 @@ jobs:
           VITE_BASE_PATH: '/chat-app-sdk-demo/test/'
           VITE_OUT_DIR: dist-test
 
-      # Develop: merge prod (from cache) + test into combined for deployment
+      # Develop: merge prod (from cache) to /live + test to /test, root index links to both
       - name: Merge prod and test builds
         if: github.ref == 'refs/heads/develop'
         run: |
-          mkdir -p combined/test
+          mkdir -p combined/live combined/test
           if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
-            cp -r dist/* combined/
-          else
-            # 无 prod 缓存时：根目录放重定向页，引导到 /test/
-            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=./test/"></head><body><p>Redirecting to <a href="./test/">test</a>...</p></body></html>' > combined/index.html
+            cp -r dist/* combined/live/
           fi
+          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>chat-app-sdk-demo</title></head><body><p><a href="./live/">生产环境 (live)</a></p><p><a href="./test/">测试环境 (test)</a></p></body></html>' > combined/index.html
           cp -r dist-test/. combined/test/
 
       # Develop: 保存 combined 供下次 main 部署时保留 /test/
@@ -124,10 +123,10 @@ jobs:
           path: './combined'
 
   deploy:
-    # 不同环境对应不同访问 URL：main -> 站点根；develop -> 站点根/test/
+    # 不同环境对应不同访问 URL：main -> /live；develop -> /test
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'test' }}
-      url: ${{ github.ref == 'refs/heads/main' && steps.deployment.outputs.page_url || format('{0}test/', steps.deployment.outputs.page_url) }}
+      url: ${{ github.ref == 'refs/heads/main' && format('{0}live/', steps.deployment.outputs.page_url) || format('{0}test/', steps.deployment.outputs.page_url) }}
     runs-on: ubuntu-latest
     needs: build
     steps:
