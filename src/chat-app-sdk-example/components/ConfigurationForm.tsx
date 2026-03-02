@@ -3,6 +3,66 @@ import type { SortConfig } from './utils/schema-config';
 import { ExternalLink } from './ExternalLink';
 import { Tooltip } from './Tooltip';
 
+/** 环境类型：生产 / 测试 / 开发 / 私有化 */
+const ENV_OPTIONS = [
+  {
+    value: 'prod' as const,
+    label: '生产环境',
+    apiUrl: 'https://copilot.glodon.com/api/cvforce/flow',
+    portalSegment: 'cvforce',
+  },
+  {
+    value: 'test' as const,
+    label: '测试环境',
+    apiUrl: 'https://aiot-dev.glodon.com/api/cvforce/flow',
+    portalSegment: 'cvforce',
+  },
+  {
+    value: 'dev' as const,
+    label: '开发环境',
+    apiUrl: 'https://aiot-dev.glodon.com/api/cvforcepd/flow',
+    portalSegment: 'cvforcepd',
+  },
+  {
+    value: 'private' as const,
+    label: '私有化环境',
+    apiUrl: '',
+    portalSegment: 'cvforce',
+  },
+] as const;
+
+function getEnvFromApiUrl(apiUrl: string): 'dev' | 'test' | 'prod' | 'private' {
+  const trimmed = apiUrl.trim();
+  if (trimmed === '') return 'private';
+  const found = ENV_OPTIONS.find(opt => opt.apiUrl === trimmed);
+  return found ? found.value : 'prod';
+}
+
+function getPortalSegmentFromApiUrl(apiUrl: string): string {
+  return apiUrl.includes('cvforcepd') ? 'cvforcepd' : 'cvforce';
+}
+
+/**
+ * 从 JWT token 的 payload 中解析租户 code（ten 字段）。
+ * 仅做解码用于展示链接，不校验签名。
+ */
+function getTenantCodeFromToken(token: string): string | null {
+  if (!token || !token.trim()) return null;
+  try {
+    const parts = token.trim().split('.');
+    if (parts.length !== 3) return null;
+    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padding = payloadBase64.length % 4;
+    const padded =
+      padding === 0 ? payloadBase64 : payloadBase64 + '='.repeat(4 - padding);
+    const payload = JSON.parse(atob(padded)) as { ten?: string };
+    const ten = payload?.ten;
+    return ten != null ? String(ten) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface ConfigurationFormProps {
   token: string;
   setToken: (value: string) => void;
@@ -55,9 +115,59 @@ export const ConfigurationForm = ({
   };
 
   const apiHost = getHostFromApiUrl(apiUrl);
+  const currentEnv = getEnvFromApiUrl(apiUrl);
+  const portalSegment = getPortalSegmentFromApiUrl(apiUrl);
+  const tenantCode = token.trim() ? getTenantCodeFromToken(token.trim()) : null;
+  const showPortalLinks = Boolean(tenantCode && apiUrl.trim());
+
+  const handleEnvChange = (env: 'dev' | 'test' | 'prod' | 'private') => {
+    const option = ENV_OPTIONS.find(o => o.value === env);
+    if (option) setApiUrl(option.apiUrl);
+  };
+
   return (
     <div>
       <h2 style={{ margin: '0 0 20px 0', color: '#667eea' }}>🔧 配置信息</h2>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#333',
+          }}
+        >
+          环境
+        </label>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}
+        >
+          {ENV_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handleEnvChange(opt.value)}
+              style={{
+                padding: '8px 16px',
+                border: `2px solid ${currentEnv === opt.value ? '#667eea' : '#ddd'}`,
+                borderRadius: '6px',
+                background: currentEnv === opt.value ? '#667eea' : '#fff',
+                color: currentEnv === opt.value ? '#fff' : '#333',
+                fontWeight: currentEnv === opt.value ? 'bold' : 'normal',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div style={{ marginBottom: '20px' }}>
         <label
@@ -298,9 +408,9 @@ export const ConfigurationForm = ({
                   </span>
                 </Tooltip>
               </label>
-              {appId.trim() && (
+              {appId.trim() && showPortalLinks && (
                 <ExternalLink
-                  href={`${apiHost}/portal/gldcv/cvforcepd/fe/#/space/1758636595/project-ide/${appId.trim()}`}
+                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/1758636595/project-ide/${appId.trim()}`}
                   title="在系统中打开 App"
                 />
               )}
@@ -375,9 +485,9 @@ export const ConfigurationForm = ({
                   </span>
                 </Tooltip>
               </label>
-              {appId.trim() && workflowId.trim() && (
+              {appId.trim() && workflowId.trim() && showPortalLinks && (
                 <ExternalLink
-                  href={`${apiHost}/portal/gldcv/cvforcepd/fe/#/space/1758636595/project-ide/${appId.trim()}/workflow/${workflowId.trim()}`}
+                  href={`${apiHost}/portal/${tenantCode}/${portalSegment}/fe/#/space/1758636595/project-ide/${appId.trim()}/workflow/${workflowId.trim()}`}
                   title="在系统中打开 Workflow"
                 />
               )}

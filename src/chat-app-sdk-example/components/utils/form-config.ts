@@ -22,7 +22,7 @@ const DEFAULT_FORM_CONFIG: FormConfig = {
   workflowId: '',
   draftMode: 'true',
   connectNetwork: 0,
-  apiUrl: 'https://aiot-dev.glodon.com/api/cvforcepd/flow',
+  apiUrl: 'https://copilot.glodon.com/api/cvforce/flow',
   logoUrl:
     'https://cv-cdn.obs.cn-north-4.myhuaweicloud.com/glodon/images/chatlogo.png',
 };
