@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const isDemoPage = (pathname: string) => pathname === '/demo';
 
+const isTestEnv = (import.meta.env.BASE_URL ?? '').includes('/test/');
+
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -83,7 +85,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               lineHeight: '1.4',
             }}
           >
-            @glodon-aiot/chat-app-sdk
+            {isTestEnv ? '【测试环境】' : ''}@glodon-aiot/chat-app-sdk
           </h1>
         </div>
         <div
